@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ChronoLearn — Interactive History, Science & Research</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════
+   1. CSS VARIABLES & RESET
+═══════════════════════════════════════════════════ */
+:root {
+  --gold:       #c9a84c;
+  --gold-light: #f0d060;
+  --gold-dim:   rgba(201,168,76,.15);
+  --parchment:  #f0e6c8;
+  --ink:        #080604;
+  --surface:    #0f0c08;
+  --surface2:   #1a1510;
+  --surface3:   #251e14;
+  --border:     rgba(201,168,76,.18);
+  --text:       rgba(240,230,200,.85);
+  --text-dim:   rgba(240,230,200,.45);
+  --red:        #c04040;
+  --blue:       #4080c0;
+  --green:      #40a060;
+  --ease:       cubic-bezier(.23,1,.32,1);
+  --radius:     10px;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; font-size:16px; }
+body {
+  font-family:'EB Garamond', serif;
+  background:var(--ink);
+  color:var(--text);
+  overflow-x:hidden;
+  cursor:none;
+  line-height:1.7;
+}
+a { text-decoration:none; color:inherit; }
+button { cursor:pointer; font-family:inherit; }
+img { max-width:100%; }
+
+/* ═══════════════════════════════════════════════════
+   2. CUSTOM CURSOR
+═══════════════════════════════════════════════════ */
+#cursor {
+  position:fixed; width:10px; height:10px;
+  border-radius:50%; background:var(--gold);
+  pointer-events:none; z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:background .4s, transform .15s;
+  mix-blend-mode:screen;
+}
+#cursor-ring {
+  position:fixed; width:30px; height:30px;
+  border-radius:50%; border:1px solid rgba(201,168,76,.5);
+  pointer-events:none; z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:all .1s ease, width .3s, height .3s, border-color .4s;
+}
+body:hover #cursor { opacity:1; }
+
+/* ═══════════════════════════════════════════════════
+   3. SCROLLBAR
+═══════════════════════════════════════════════════ */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:var(--ink); }
+::-webkit-scrollbar-thumb { background:var(--gold); border-radius:4px; }
+
+/* ═══════════════════════════════════════════════════
+   4. PROGRESS BAR
+═══════════════════════════════════════════════════ */
+#progress-bar {
+  position:fixed; top:0; left:0; height:2px;
+  background:linear-gradient(90deg, var(--gold), var(--gold-light));
+  width:0%; z-index:1001;
+  box-shadow:0 0 10px var(--gold);
+  transition:width .08s;
+}
+
+/* ═══════════════════════════════════════════════════
+   5. NAVIGATION
+═══════════════════════════════════════════════════ */
+#nav {
+  position:fixed; top:0; left:0; right:0;
+  z-index:1000; height:64px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 40px;
+  background:rgba(8,6,4,.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  transition:all .4s;
+}
+.nav-logo {
+  font-family:'Cinzel', serif;
+  font-size:1.2rem; font-weight:900;
+  color:var(--gold); letter-spacing:2px;
+  display:flex; align-items:center; gap:10px;
+}
+.nav-logo span { font-size:1.4rem; }
+.nav-links { display:flex; gap:8px; }
+.nav-link {
+  padding:7px 16px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:.72rem; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--text-dim); border:none; background:transparent;
+  border-radius:4px; transition:all .3s;
+  position:relative;
+}
+.nav-link::after {
+  content:''; position:absolute; bottom:4px; left:16px; right:16px;
+  height:1px; background:var(--gold); transform:scaleX(0);
+  transition:transform .3s var(--ease);
+}
+.nav-link:hover, .nav-link.active { color:var(--gold); }
+.nav-link:hover::after, .nav-link.active::after { transform:scaleX(1); }
+.nav-actions { display:flex; gap:8px; align-items:center; }
+#age-toggle {
+  display:flex; border:1px solid var(--border);
+  border-radius:20px; overflow:hidden;
+  background:rgba(0,0,0,.4);
+}
+.age-btn {
+  padding:6px 14px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:.65rem; letter-spacing:1.5px; text-transform:uppercase;
+  border:none; background:transparent; color:var(--text-dim);
+  transition:all .3s;
+}
+.age-btn.active { background:var(--gold); color:#000; font-weight:700; }
+#sound-btn {
+  width:36px; height:36px; border-radius:50%;
+  border:1px solid var(--border); background:rgba(0,0,0,.4);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem; color:var(--text); transition:all .3s;
+}
+#sound-btn:hover { border-color:var(--gold); color:var(--gold); }
+
+/* ═══════════════════════════════════════════════════
+   6. BG CANVAS (Stars / particles)
+═══════════════════════════════════════════════════ */
+#bg-canvas {
+  position:fixed; inset:0;
+  pointer-events:none; z-index:0; opacity:.6;
+}
+
+/* ═══════════════════════════════════════════════════
+   7. PAGE SECTIONS (router)
+═══════════════════════════════════════════════════ */
+.page { display:none; min-height:100vh; position:relative; z-index:2; }
+.page.active { display:block; }
+
+/* ═══════════════════════════════════════════════════
+   8. HOME PAGE
+═══════════════════════════════════════════════════ */
+#page-home {
+  background:radial-gradient(ellipse at 50% 35%, #1a1200 0%, #040300 80%);
+}
+
+/* Hero */
+.hero {
+  min-height:100vh; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center; padding:100px 24px 60px;
+  position:relative; overflow:hidden;
+}
+.hero-orb {
+  position:absolute; border-radius:50%;
+  filter:blur(80px); pointer-events:none; opacity:.25;
+  animation:orbFloat 8s ease-in-out infinite;
+}
+.orb1 { width:500px; height:500px; background:radial-gradient(circle,#c9a84c,transparent); top:-100px; left:-100px; animation-delay:0s; }
+.orb2 { width:400px; height:400px; background:radial-gradient(circle,#4060c0,transparent); bottom:-50px; right:-50px; animation-delay:-3s; }
+.orb3 { width:300px; height:300px; background:radial-gradient(circle,#c04040,transparent); top:30%; left:60%; animation-delay:-6s; }
+@keyframes orbFloat {
+  0%,100%{ transform:translateY(0) scale(1); }
+  50%{ transform:translateY(-30px) scale(1.05); }
+}
+
+.hero-badge {
+  font-family:'JetBrains Mono', monospace;
+  font-size:.7rem; letter-spacing:4px; text-transform:uppercase;
+  color:var(--gold); opacity:.7; margin-bottom:1.5rem;
+  border:1px solid rgba(201,168,76,.3); padding:6px 18px; border-radius:20px;
+  animation:fadeUp 1s var(--ease) both;
+}
+.hero h1 {
+  font-family:'Cinzel', serif;
+  font-size:clamp(3rem,9vw,7.5rem);
+  font-weight:900; line-height:.9;
+  letter-spacing:-2px; margin-bottom:1.5rem;
+  animation:fadeUp 1s .15s var(--ease) both;
+}
+.hero h1 .line1 { display:block; color:var(--parchment); }
+.hero h1 .line2 {
+  display:block;
+  background:linear-gradient(135deg,#f0d060,#c9a84c,#8a5a1a);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.hero-sub {
+  font-size:clamp(.9rem,2vw,1.15rem); font-style:italic;
+  max-width:580px; margin:0 auto 3rem; opacity:.55; line-height:1.9;
+  animation:fadeUp 1s .3s var(--ease) both;
+}
+@keyframes fadeUp {
+  from{ opacity:0; transform:translateY(40px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+/* Hero Stats */
+.hero-stats {
+  display:flex; gap:3rem; justify-content:center; margin-bottom:3rem;
+  animation:fadeUp 1s .45s var(--ease) both;
+}
+.hstat { text-align:center; }
+.hstat-n {
+  font-family:'Cinzel', serif; font-size:2.2rem; font-weight:700;
+  color:var(--gold); display:block; line-height:1;
+}
+.hstat-l { font-size:.7rem; opacity:.4; letter-spacing:2px; text-transform:uppercase; margin-top:4px; font-family:'JetBrains Mono',monospace; }
+
+/* CTA Buttons */
+.hero-ctas {
+  display:flex; gap:1rem; flex-wrap:wrap; justify-content:center;
+  animation:fadeUp 1s .55s var(--ease) both;
+}
+.btn-primary {
+  padding:14px 32px;
+  background:var(--gold); color:#000;
+  font-family:'JetBrains Mono', monospace;
+  font-size:.8rem; letter-spacing:2px; text-transform:uppercase;
+  border:none; border-radius:4px; font-weight:700;
+  transition:all .3s; box-shadow:0 0 20px rgba(201,168,76,.3);
+}
+.btn-primary:hover { transform:translateY(-3px); box-shadow:0 8px 30px rgba(201,168,76,.5); }
+.btn-outline {
+  padding:14px 32px;
+  background:transparent; color:var(--gold);
+  font-family:'JetBrains Mono', monospace;
+  font-size:.8rem; letter-spacing:2px; text-transform:uppercase;
+  border:1px solid rgba(201,168,76,.4); border-radius:4px;
+  transition:all .3s;
+}
+.btn-outline:hover { border-color:var(--gold); background:rgba(201,168,76,.08); transform:translateY(-3px); }
+
+/* Scroll hint */
+.scroll-hint {
+  position:absolute; bottom:30px; left:50%;
+  transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; letter-spacing:3px; opacity:.3; text-transform:uppercase;
+  animation:hintBounce 2s ease-in-out infinite;
+}
+@keyframes hintBounce {
+  0%,100%{ transform:translateX(-50%) translateY(0); }
+  50%{ transform:translateX(-50%) translateY(8px); }
+}
+
+/* Feature Strip */
+.feature-strip {
+  padding:80px 40px; max-width:1100px; margin:0 auto;
+}
+.section-heading {
+  font-family:'Cinzel', serif;
+  font-size:clamp(1.6rem,4vw,2.8rem);
+  font-weight:700; color:var(--gold);
+  margin-bottom:.5rem; letter-spacing:1px;
+}
+.section-sub {
+  font-style:italic; opacity:.5; margin-bottom:3rem;
+  font-size:1rem;
+}
+.feat-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1.2rem;
+}
+.feat-card {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:2rem 1.5rem;
+  transition:all .35s; cursor:pointer; position:relative; overflow:hidden;
+}
+.feat-card::after {
+  content:''; position:absolute; bottom:0; left:0; right:0;
+  height:2px; background:var(--gold); transform:scaleX(0);
+  transition:transform .35s var(--ease);
+}
+.feat-card:hover { transform:translateY(-6px); border-color:var(--gold); box-shadow:0 12px 40px rgba(0,0,0,.5); }
+.feat-card:hover::after { transform:scaleX(1); }
+.feat-icon { font-size:2.2rem; margin-bottom:1rem; display:block; }
+.feat-title { font-family:'Cinzel',serif; font-size:1rem; color:var(--gold); margin-bottom:.6rem; font-weight:600; }
+.feat-desc { font-size:.85rem; opacity:.55; line-height:1.7; }
+
+/* ═══════════════════════════════════════════════════
+   9. EXPLORE PAGE — History Sections
+═══════════════════════════════════════════════════ */
+#page-explore { background:var(--ink); }
+
+/* Filter bar */
+.filter-bar {
+  padding:100px 40px 30px;
+  display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+  max-width:1200px; margin:0 auto;
+}
+.filter-label {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; letter-spacing:3px; text-transform:uppercase;
+  color:var(--gold); opacity:.6; margin-right:.5rem;
+}
+.filter-btn {
+  padding:6px 16px; border-radius:20px;
+  border:1px solid var(--border); background:transparent;
+  color:var(--text-dim);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; letter-spacing:1px; text-transform:uppercase;
+  transition:all .3s;
+}
+.filter-btn:hover, .filter-btn.active {
+  border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,.08);
+}
+
+/* History Cards Grid */
+.history-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:1.5rem; padding:20px 40px 60px; max-width:1200px; margin:0 auto;
+}
+.history-card {
+  border-radius:var(--radius); overflow:hidden;
+  border:1px solid var(--border); cursor:pointer;
+  transition:all .4s var(--ease); position:relative;
+  background:var(--surface2);
+}
+.history-card:hover { transform:translateY(-8px) scale(1.01); border-color:var(--gold); box-shadow:0 20px 50px rgba(0,0,0,.6); }
+.hcard-bg {
+  height:180px; position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+.hcard-emoji { font-size:4rem; filter:drop-shadow(0 0 20px rgba(0,0,0,.8)); z-index:1; }
+.hcard-overlay {
+  position:absolute; inset:0;
+  background:linear-gradient(180deg,transparent 40%,var(--surface2));
+}
+.hcard-body { padding:1.2rem 1.4rem 1.4rem; }
+.hcard-era {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.6rem; letter-spacing:3px; text-transform:uppercase;
+  color:var(--gold); opacity:.7; margin-bottom:.4rem;
+}
+.hcard-title {
+  font-family:'Cinzel',serif; font-size:1.1rem;
+  color:var(--parchment); margin-bottom:.5rem; font-weight:600;
+}
+.hcard-desc { font-size:.85rem; opacity:.55; line-height:1.6; margin-bottom:1rem; }
+.hcard-tags { display:flex; gap:.4rem; flex-wrap:wrap; }
+.tag {
+  padding:3px 10px; border-radius:20px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.58rem; letter-spacing:1px; text-transform:uppercase;
+  border:1px solid var(--border); color:var(--text-dim);
+}
+.hcard-arrow {
+  position:absolute; top:14px; right:14px;
+  width:32px; height:32px; border-radius:50%;
+  border:1px solid var(--border); background:rgba(0,0,0,.5);
+  display:flex; align-items:center; justify-content:center;
+  font-size:.9rem; transition:all .3s;
+}
+.history-card:hover .hcard-arrow { border-color:var(--gold); background:var(--gold); color:#000; }
+
+/* ═══════════════════════════════════════════════════
+   10. IMMERSIVE HISTORY VIEWER
+═══════════════════════════════════════════════════ */
+#immersive-view {
+  display:none; position:fixed; inset:0; z-index:500;
+  overflow-y:auto; overflow-x:hidden;
+}
+#immersive-view.active { display:block; }
+
+#imm-bg {
+  position:fixed; inset:0; z-index:0;
+  transition:background 1.5s ease;
+  background:radial-gradient(ellipse at 50% 30%, #1a1000 0%, #030200 100%);
+}
+#imm-particles { position:fixed; inset:0; z-index:1; pointer-events:none; }
+#imm-close {
+  position:fixed; top:24px; right:24px; z-index:600;
+  width:44px; height:44px; border-radius:50%;
+  border:1px solid var(--border); background:rgba(0,0,0,.7);
+  backdrop-filter:blur(10px); font-size:1.2rem;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text); transition:all .3s;
+}
+#imm-close:hover { border-color:var(--gold); color:var(--gold); }
+#imm-progress-bar {
+  position:fixed; left:0; top:0; height:2px; z-index:600;
+  background:var(--gold); width:0%;
+  box-shadow:0 0 10px var(--gold); transition:width .1s;
+}
+
+/* Timeline sidebar inside immersive */
+#imm-timeline {
+  position:fixed; left:24px; top:50%; transform:translateY(-50%);
+  z-index:600; display:flex; flex-direction:column; align-items:center; gap:0;
+}
+.itl-dot {
+  width:8px; height:8px; border-radius:50%;
+  border:2px solid rgba(255,255,255,.2); background:transparent;
+  cursor:pointer; transition:all .4s;
+}
+.itl-dot.active {
+  border-color:var(--gold); background:var(--gold);
+  box-shadow:0 0 10px var(--gold); transform:scale(1.5);
+}
+.itl-line { width:1px; height:36px; background:rgba(255,255,255,.08); }
+.itl-line.lit { background:rgba(201,168,76,.4); }
+
+/* Immersive sections */
+.imm-section {
+  min-height:100vh; display:flex; flex-direction:column;
+  justify-content:center; align-items:center;
+  padding:80px 80px 80px 120px; position:relative; z-index:2;
+}
+@media(max-width:700px){ .imm-section { padding:80px 24px; } }
+.imm-inner { max-width:800px; width:100%; }
+.imm-chapter {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; letter-spacing:4px; text-transform:uppercase;
+  color:var(--gold); opacity:.7; margin-bottom:1rem;
+}
+.imm-title {
+  font-family:'Cinzel',serif;
+  font-size:clamp(2rem,5vw,4rem); font-weight:700;
+  line-height:1.05; margin-bottom:1.2rem;
+}
+.imm-year {
+  position:absolute; font-family:'Cinzel',serif;
+  font-size:clamp(5rem,18vw,14rem); font-weight:900;
+  opacity:.05; top:50%; left:50%; transform:translate(-50%,-50%);
+  pointer-events:none; white-space:nowrap; letter-spacing:-5px;
+  color:var(--parchment);
+}
+.imm-text {
+  font-size:clamp(.9rem,1.8vw,1.05rem); line-height:1.9; opacity:.8;
+  margin-bottom:1.5rem;
+}
+.imm-text-simple {
+  font-size:clamp(.9rem,1.8vw,1.05rem); line-height:1.9; opacity:.8;
+  margin-bottom:1.5rem; display:none;
+}
+.imm-text-simple.show, .imm-text.hide { display:none; }
+.imm-text.show { display:block; }
+.imm-text-simple.show { display:block; }
+
+/* Fact cards inside sections */
+.fact-row {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:.8rem; margin:1.5rem 0;
+}
+.fact-card {
+  background:rgba(255,255,255,.04); border:1px solid var(--border);
+  border-radius:8px; padding:1.1rem;
+  backdrop-filter:blur(8px);
+  transition:transform .3s, border-color .3s;
+}
+.fact-card:hover { transform:translateY(-4px); border-color:var(--gold); }
+.fact-n {
+  font-family:'Cinzel',serif; font-size:1.8rem; font-weight:700;
+  color:var(--gold); display:block; line-height:1;
+}
+.fact-l { font-size:.65rem; opacity:.5; text-transform:uppercase; letter-spacing:1.5px; margin-top:3px; font-family:'JetBrains Mono',monospace; }
+
+/* Quote block */
+.hist-quote {
+  border-left:3px solid rgba(201,168,76,.4);
+  padding:1rem 1.5rem; margin:1.5rem 0;
+  font-style:italic; opacity:.6; font-size:1rem;
+  background:rgba(201,168,76,.04); border-radius:0 8px 8px 0;
+}
+.hist-quote cite { display:block; margin-top:.5rem; font-size:.75rem; opacity:.7; font-style:normal; font-family:'JetBrains Mono',monospace; }
+
+/* Figure card */
+.figure-card {
+  display:flex; gap:1.2rem; align-items:flex-start;
+  background:var(--surface3); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin:1rem 0;
+}
+.figure-avatar {
+  width:60px; height:60px; border-radius:50%;
+  border:2px solid var(--gold);
+  background:var(--surface2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.8rem; flex-shrink:0;
+}
+.figure-name { font-family:'Cinzel',serif; font-size:.95rem; color:var(--gold); margin-bottom:.3rem; }
+.figure-role { font-size:.75rem; opacity:.5; font-family:'JetBrains Mono',monospace; letter-spacing:1px; }
+.figure-bio { font-size:.85rem; opacity:.65; margin-top:.5rem; line-height:1.6; }
+
+/* ═══════════════════════════════════════════════════
+   11. SCIENCE EVOLUTION PAGE
+═══════════════════════════════════════════════════ */
+#page-science { background:radial-gradient(ellipse at 30% 20%, #001020 0%, #040302 80%); }
+
+.sci-hero {
+  padding:120px 40px 60px; max-width:900px; margin:0 auto; text-align:center;
+}
+
+/* Science timeline */
+.sci-timeline { max-width:900px; margin:0 auto; padding:20px 40px 80px; position:relative; }
+.sci-timeline::before {
+  content:''; position:absolute; left:50%; top:0; bottom:0;
+  width:1px; background:linear-gradient(180deg, transparent, rgba(201,168,76,.3), var(--gold), rgba(201,168,76,.3), transparent);
+  transform:translateX(-50%);
+}
+@media(max-width:700px){
+  .sci-timeline::before { left:20px; }
+}
+
+.sci-entry {
+  display:flex; gap:2rem; margin-bottom:4rem; position:relative;
+  opacity:0; transform:translateY(30px);
+  transition:opacity .8s var(--ease), transform .8s var(--ease);
+}
+.sci-entry.visible { opacity:1; transform:translateY(0); }
+.sci-entry:nth-child(odd) { flex-direction:row-reverse; }
+.sci-entry:nth-child(odd) .sci-card { text-align:right; }
+@media(max-width:700px){
+  .sci-entry, .sci-entry:nth-child(odd) { flex-direction:column; padding-left:50px; }
+  .sci-entry:nth-child(odd) .sci-card { text-align:left; }
+}
+
+.sci-dot-wrap {
+  position:absolute; left:50%; transform:translateX(-50%);
+  z-index:2;
+}
+@media(max-width:700px){ .sci-dot-wrap { left:20px; } }
+.sci-dot {
+  width:16px; height:16px; border-radius:50%;
+  border:2px solid var(--gold); background:var(--surface);
+  box-shadow:0 0 15px rgba(201,168,76,.4);
+  transition:all .3s;
+}
+.sci-dot:hover { background:var(--gold); transform:scale(1.4); }
+
+.sci-card {
+  flex:1; background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.4rem 1.6rem;
+  transition:all .35s; cursor:default;
+}
+.sci-card:hover { border-color:var(--gold); box-shadow:0 8px 30px rgba(0,0,0,.4); }
+.sci-year-tag {
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; letter-spacing:3px; color:var(--gold);
+  margin-bottom:.5rem; display:block;
+}
+.sci-title { font-family:'Cinzel',serif; font-size:1.1rem; color:var(--parchment); margin-bottom:.5rem; font-weight:600; }
+.sci-desc { font-size:.88rem; opacity:.6; line-height:1.7; }
+.sci-scientist { display:inline-flex; align-items:center; gap:.5rem; margin-top:.8rem; }
+.sci-avatar { font-size:1.4rem; }
+.sci-sname { font-size:.75rem; color:var(--gold); opacity:.8; font-family:'JetBrains Mono',monospace; }
+.sci-impact {
+  display:inline-block; margin-top:.8rem; padding:4px 12px;
+  border-radius:20px; font-size:.6rem;
+  font-family:'JetBrains Mono',monospace; letter-spacing:1px; text-transform:uppercase;
+}
+.impact-high { background:rgba(192,64,64,.2); border:1px solid rgba(192,64,64,.4); color:#e07070; }
+.impact-med  { background:rgba(64,128,192,.2); border:1px solid rgba(64,128,192,.4); color:#70a0d0; }
+.impact-rev  { background:rgba(64,160,96,.2); border:1px solid rgba(64,160,96,.4); color:#70c090; }
+
+/* ═══════════════════════════════════════════════════
+   12. RESEARCHER HUB PAGE
+═══════════════════════════════════════════════════ */
+#page-research { background:radial-gradient(ellipse at 70% 80%, #0a0800 0%, #040302 80%); }
+
+.research-layout {
+  display:grid; grid-template-columns:300px 1fr;
+  gap:2rem; padding:100px 40px 60px; max-width:1200px; margin:0 auto;
+}
+@media(max-width:900px){ .research-layout { grid-template-columns:1fr; } }
+
+/* Researcher sidebar */
+.researcher-sidebar {}
+.rs-heading { font-family:'Cinzel',serif; font-size:.85rem; color:var(--gold); letter-spacing:2px; margin-bottom:1rem; }
+.researcher-card {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem;
+  cursor:pointer; transition:all .3s; margin-bottom:.8rem;
+  display:flex; gap:1rem; align-items:center;
+}
+.researcher-card:hover, .researcher-card.active {
+  border-color:var(--gold); background:rgba(201,168,76,.06);
+}
+.rc-avatar {
+  width:46px; height:46px; border-radius:50%;
+  border:2px solid var(--border); background:var(--surface3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem; flex-shrink:0; transition:border-color .3s;
+}
+.researcher-card:hover .rc-avatar, .researcher-card.active .rc-avatar {
+  border-color:var(--gold);
+}
+.rc-name { font-family:'Cinzel',serif; font-size:.88rem; color:var(--parchment); margin-bottom:.2rem; }
+.rc-field { font-size:.7rem; color:var(--gold); opacity:.7; font-family:'JetBrains Mono',monospace; }
+
+/* Research main area */
+.research-main {}
+
+/* Profile panel */
+.profile-panel {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:2rem; margin-bottom:1.5rem;
+  display:none;
+}
+.profile-panel.active { display:block; animation:fadeUp .5s var(--ease) both; }
+.pp-header { display:flex; gap:1.5rem; align-items:flex-start; margin-bottom:1.5rem; }
+.pp-avatar {
+  width:80px; height:80px; border-radius:50%;
+  border:2px solid var(--gold); background:var(--surface3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:2.5rem; flex-shrink:0;
+  box-shadow:0 0 20px rgba(201,168,76,.2);
+}
+.pp-name { font-family:'Cinzel',serif; font-size:1.5rem; color:var(--gold); font-weight:700; margin-bottom:.3rem; }
+.pp-title { font-size:.85rem; opacity:.6; margin-bottom:.5rem; font-style:italic; }
+.pp-meta { display:flex; gap:1rem; flex-wrap:wrap; }
+.pp-badge {
+  padding:3px 12px; border-radius:20px;
+  font-size:.65rem; font-family:'JetBrains Mono',monospace;
+  letter-spacing:1px; text-transform:uppercase;
+  border:1px solid var(--border); color:var(--text-dim);
+}
+.pp-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:.8rem; margin-bottom:1.5rem; }
+.pp-stat { background:var(--surface3); border-radius:8px; padding:.8rem; text-align:center; }
+.pp-stat-n { font-family:'Cinzel',serif; font-size:1.6rem; color:var(--gold); display:block; }
+.pp-stat-l { font-size:.6rem; opacity:.4; text-transform:uppercase; letter-spacing:1.5px; font-family:'JetBrains Mono',monospace; }
+
+/* Awards */
+.award-row { display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1.5rem; }
+.award-pill {
+  display:flex; align-items:center; gap:.4rem;
+  padding:5px 14px; border-radius:20px;
+  background:rgba(201,168,76,.08); border:1px solid rgba(201,168,76,.2);
+  font-size:.75rem; color:var(--gold);
+}
+.award-pill span { font-size:1rem; }
+
+/* Research posts */
+.research-post {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius); margin-bottom:1rem;
+  overflow:hidden; transition:border-color .3s;
+}
+.research-post:hover { border-color:rgba(201,168,76,.35); }
+.rp-header {
+  padding:1.2rem 1.4rem; cursor:pointer;
+  display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
+}
+.rp-meta { flex:1; }
+.rp-tags { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.5rem; }
+.rp-tag {
+  padding:2px 10px; border-radius:20px;
+  font-size:.58rem; font-family:'JetBrains Mono',monospace;
+  letter-spacing:1px; text-transform:uppercase;
+  background:rgba(64,128,192,.15); border:1px solid rgba(64,128,192,.3); color:#88b8e0;
+}
+.rp-title { font-family:'Cinzel',serif; font-size:1rem; color:var(--parchment); margin-bottom:.4rem; font-weight:600; }
+.rp-preview { font-size:.85rem; opacity:.5; line-height:1.5; }
+.rp-toggle-icon {
+  width:28px; height:28px; border-radius:50%;
+  border:1px solid var(--border); background:transparent;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.8rem; flex-shrink:0; transition:all .3s;
+  color:var(--text-dim);
+}
+.research-post.expanded .rp-toggle-icon { border-color:var(--gold); color:var(--gold); transform:rotate(45deg); }
+
+.rp-body {
+  display:none; padding:0 1.4rem 1.4rem;
+  border-top:1px solid var(--border); padding-top:1.2rem;
+}
+.research-post.expanded .rp-body { display:block; animation:fadeUp .4s var(--ease) both; }
+
+/* Simplify toggle */
+.simplify-toggle {
+  display:inline-flex; align-items:center; gap:.6rem;
+  margin-bottom:1rem; cursor:pointer;
+  padding:6px 14px; border-radius:20px;
+  border:1px solid rgba(64,160,96,.3); background:rgba(64,160,96,.08);
+  color:#70c090; font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; letter-spacing:1.5px; text-transform:uppercase;
+  transition:all .3s;
+}
+.simplify-toggle:hover { background:rgba(64,160,96,.15); border-color:rgba(64,160,96,.6); }
+.simplify-toggle .tog-dot {
+  width:10px; height:10px; border-radius:50%;
+  border:1px solid currentColor; transition:background .3s;
+}
+.simplify-toggle.simple .tog-dot { background:currentColor; }
+
+.rp-detailed, .rp-simple { transition:opacity .4s; }
+.rp-detailed.hidden, .rp-simple.hidden { display:none; }
+
+.rp-text { font-size:.92rem; line-height:1.85; opacity:.75; margin-bottom:1rem; }
+.rp-text-simple {
+  font-size:.95rem; line-height:1.9; opacity:.75;
+  margin-bottom:1rem;
+  padding:1rem 1.2rem;
+  background:rgba(64,160,96,.06); border-radius:8px;
+  border-left:3px solid rgba(64,160,96,.4);
+}
+.rp-findings { margin:1rem 0; }
+.rp-find-title { font-family:'Cinzel',serif; font-size:.85rem; color:var(--gold); margin-bottom:.6rem; }
+.rp-find-item {
+  display:flex; align-items:flex-start; gap:.6rem;
+  font-size:.85rem; opacity:.7; margin-bottom:.4rem; line-height:1.5;
+}
+.rp-find-item::before { content:'◆'; color:var(--gold); flex-shrink:0; font-size:.5rem; margin-top:.35rem; }
+
+/* ═══════════════════════════════════════════════════
+   13. DISCUSSION / COMMENTS
+═══════════════════════════════════════════════════ */
+.discussion-section {
+  max-width:700px; margin:0 auto; padding:0 40px 60px;
+}
+.disc-heading { font-family:'Cinzel',serif; font-size:1.3rem; color:var(--gold); margin-bottom:1.5rem; }
+.comment-form {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:1.5rem;
+}
+.comment-form textarea {
+  width:100%; background:var(--surface3); border:1px solid var(--border);
+  color:var(--text); font-family:'EB Garamond',serif; font-size:.95rem;
+  padding:.8rem 1rem; border-radius:6px; resize:vertical; min-height:80px;
+  line-height:1.6; transition:border-color .3s; outline:none;
+}
+.comment-form textarea:focus { border-color:var(--gold); }
+.comment-form-footer {
+  display:flex; justify-content:space-between; align-items:center; margin-top:.8rem;
+}
+.comment-form-footer span { font-size:.75rem; opacity:.4; font-family:'JetBrains Mono',monospace; }
+
+.comment {
+  display:flex; gap:1rem; margin-bottom:1.2rem;
+  animation:fadeUp .4s var(--ease) both;
+}
+.comment-avatar {
+  width:38px; height:38px; border-radius:50%;
+  border:1px solid var(--border); background:var(--surface3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem; flex-shrink:0;
+}
+.comment-body { flex:1; }
+.comment-meta { display:flex; align-items:baseline; gap:.6rem; margin-bottom:.4rem; }
+.comment-name { font-family:'Cinzel',serif; font-size:.85rem; color:var(--gold); }
+.comment-time { font-size:.65rem; opacity:.4; font-family:'JetBrains Mono',monospace; }
+.comment-text { font-size:.88rem; opacity:.7; line-height:1.7; }
+.comment-actions { display:flex; gap:.8rem; margin-top:.4rem; }
+.cmt-action {
+  font-size:.7rem; color:var(--text-dim); background:none; border:none;
+  cursor:pointer; font-family:'JetBrains Mono',monospace; letter-spacing:1px;
+  transition:color .3s; padding:2px 0;
+}
+.cmt-action:hover { color:var(--gold); }
+
+/* ═══════════════════════════════════════════════════
+   14. UTILITY
+═══════════════════════════════════════════════════ */
+.gold { color:var(--gold); }
+.dim { opacity:.5; }
+.divider { height:1px; background:var(--border); margin:2rem 0; }
+.reveal {
+  opacity:0; transform:translateY(24px);
+  transition:opacity .8s var(--ease), transform .8s var(--ease);
+}
+.reveal.visible { opacity:1; transform:translateY(0); }
+.reveal-d1 { transition-delay:.1s; }
+.reveal-d2 { transition-delay:.2s; }
+.reveal-d3 { transition-delay:.35s; }
+
+@media(max-width:600px){
+  #nav { padding:0 16px; }
+  .nav-links { display:none; }
+  .history-grid, .feat-grid { grid-template-columns:1fr; padding:16px; }
+  .filter-bar { padding:100px 16px 20px; }
+  .imm-section { padding:80px 16px; }
+  .pp-stats { grid-template-columns:1fr 1fr; }
+  .sci-entry:nth-child(odd) .sci-card { text-align:left; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════
+     CURSOR
+════════════════════════════════════ -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- ════════════════════════════════════
+     BG CANVAS (stars + particles)
+════════════════════════════════════ -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ════════════════════════════════════
+     PROGRESS BAR
+════════════════════════════════════ -->
+<div id="progress-bar"></div>
+
+<!-- ════════════════════════════════════
+     NAVIGATION
+════════════════════════════════════ -->
+<nav id="nav">
+  <div class="nav-logo">
+    <span>⏳</span> ChronoLearn
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="showPage('home')">Home</button>
+    <button class="nav-link" onclick="showPage('explore')">Explore</button>
+    <button class="nav-link" onclick="showPage('science')">Science</button>
+    <button class="nav-link" onclick="showPage('research')">Research Hub</button>
+  </div>
+  <div class="nav-actions">
+    <div id="age-toggle">
+      <button class="age-btn active" onclick="setAge('student')">Student</button>
+      <button class="age-btn" onclick="setAge('simple')">Simple</button>
+    </div>
+    <button id="sound-btn" onclick="toggleSound()" title="Ambient Sound">🔇</button>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════
+     PAGE: HOME
+════════════════════════════════════ -->
+<div id="page-home" class="page active">
+  <section class="hero">
+    <!-- Atmospheric orbs -->
+    <div class="hero-orb orb1"></div>
+    <div class="hero-orb orb2"></div>
+    <div class="hero-orb orb3"></div>
+
+    <p class="hero-badge">✦ Interactive Learning Platform ✦</p>
+    <h1>
+      <span class="line1">Travel Through</span>
+      <span class="line2">ChronoLearn</span>
+    </h1>
+    <p class="hero-sub">
+      Immerse yourself in history. Watch science evolve. Discover the minds that changed our world —
+      all through cinematic, scroll-driven experiences.
+    </p>
+
+    <div class="hero-stats">
+      <div class="hstat"><span class="hstat-n">5,000+</span><span class="hstat-l">Years Covered</span></div>
+      <div class="hstat"><span class="hstat-n">200+</span><span class="hstat-l">History Topics</span></div>
+      <div class="hstat"><span class="hstat-n">80+</span><span class="hstat-l">Scientists</span></div>
+      <div class="hstat"><span class="hstat-n">Free</span><span class="hstat-l">Always</span></div>
+    </div>
+
+    <div class="hero-ctas">
+      <button class="btn-primary" onclick="showPage('explore')">🏛️ Explore History</button>
+      <button class="btn-outline" onclick="showPage('science')">🔬 Science Evolution</button>
+    </div>
+
+    <div class="scroll-hint">↓ scroll to explore</div>
+  </section>
+
+  <!-- Feature strip -->
+  <section class="feature-strip">
+    <p class="section-heading reveal">What is ChronoLearn?</p>
+    <p class="section-sub reveal reveal-d1">Not a course. Not a textbook. A time machine.</p>
+    <div class="feat-grid">
+      <div class="feat-card reveal reveal-d1" onclick="showPage('explore')">
+        <span class="feat-icon">🏛️</span>
+        <div class="feat-title">Immersive History</div>
+        <p class="feat-desc">Scroll through ancient civilizations, empires, and wars with animated cinematic storytelling.</p>
+      </div>
+      <div class="feat-card reveal reveal-d2" onclick="showPage('science')">
+        <span class="feat-icon">⚗️</span>
+        <div class="feat-title">Science Evolution</div>
+        <p class="feat-desc">See how every discovery built on another — a living chain of cause and effect across centuries.</p>
+      </div>
+      <div class="feat-card reveal reveal-d2" onclick="showPage('research')">
+        <span class="feat-icon">🔬</span>
+        <div class="feat-title">Researcher Hub</div>
+        <p class="feat-desc">Read real research summaries from scientists — simplified for students or deep for scholars.</p>
+      </div>
+      <div class="feat-card reveal reveal-d3">
+        <span class="feat-icon">💬</span>
+        <div class="feat-title">Discussion</div>
+        <p class="feat-desc">Ask questions, share insights, and engage with curious minds across every topic.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: EXPLORE (History)
+════════════════════════════════════ -->
+<div id="page-explore" class="page">
+  <div class="filter-bar">
+    <span class="filter-label">Era:</span>
+    <button class="filter-btn active" onclick="filterHistory('all',this)">All</button>
+    <button class="filter-btn" onclick="filterHistory('ancient',this)">Ancient</button>
+    <button class="filter-btn" onclick="filterHistory('medieval',this)">Medieval</button>
+    <button class="filter-btn" onclick="filterHistory('modern',this)">Modern</button>
+    &nbsp;&nbsp;
+    <span class="filter-label">Region:</span>
+    <button class="filter-btn" onclick="filterHistory('india',this)">India</button>
+    <button class="filter-btn" onclick="filterHistory('europe',this)">Europe</button>
+    <button class="filter-btn" onclick="filterHistory('egypt',this)">Egypt</button>
+    <button class="filter-btn" onclick="filterHistory('world',this)">World</button>
+  </div>
+  <div class="history-grid" id="history-grid">
+    <!-- Cards injected by JS -->
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     IMMERSIVE HISTORY VIEWER
+════════════════════════════════════ -->
+<div id="immersive-view">
+  <div id="imm-bg"></div>
+  <canvas id="imm-particles"></canvas>
+  <div id="imm-progress-bar"></div>
+
+  <!-- Close button -->
+  <button id="imm-close" onclick="closeImmersive()">✕</button>
+
+  <!-- Timeline sidebar -->
+  <div id="imm-timeline"></div>
+
+  <!-- Content injected by JS -->
+  <div id="imm-content"></div>
+
+  <!-- Discussion -->
+  <div class="discussion-section" id="imm-discussion">
+    <div class="divider"></div>
+    <p class="disc-heading">💬 Discussion</p>
+    <div class="comment-form">
+      <textarea placeholder="Share a thought, question, or insight about this topic..." id="imm-comment-input"></textarea>
+      <div class="comment-form-footer">
+        <span>Scholarly discussion only</span>
+        <button class="btn-primary" style="padding:8px 20px;font-size:.72rem" onclick="addComment('imm')">Post</button>
+      </div>
+    </div>
+    <div id="imm-comments"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: SCIENCE EVOLUTION
+════════════════════════════════════ -->
+<div id="page-science" class="page">
+  <div class="sci-hero reveal">
+    <p class="hero-badge" style="margin:0 auto 1rem">⚗️ Science Through Time</p>
+    <h2 class="section-heading" style="font-size:clamp(2rem,5vw,3.5rem);margin-bottom:.8rem">How Science Evolved</h2>
+    <p style="font-style:italic;opacity:.5;max-width:560px;margin:0 auto">
+      Every discovery was built on the shoulders of giants. Follow the chain of cause and effect
+      that brought us from fire to artificial intelligence.
+    </p>
+  </div>
+  <div class="sci-timeline" id="sci-timeline">
+    <!-- Injected by JS -->
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: RESEARCHER HUB
+════════════════════════════════════ -->
+<div id="page-research" class="page">
+  <div class="research-layout">
+    <!-- Sidebar: Researcher list -->
+    <aside class="researcher-sidebar">
+      <p class="rs-heading">👤 Researchers</p>
+      <div id="researcher-list"><!-- injected by JS --></div>
+    </aside>
+
+    <!-- Main: Profile + Posts -->
+    <main class="research-main">
+      <div id="profile-area"><!-- injected by JS --></div>
+      <div id="posts-area"><!-- injected by JS --></div>
+      <div class="discussion-section" style="padding:0 0 60px;max-width:none">
+        <div class="divider"></div>
+        <p class="disc-heading">💬 Research Discussion</p>
+        <div class="comment-form">
+          <textarea placeholder="Ask a question or contribute to this research area..." id="res-comment-input"></textarea>
+          <div class="comment-form-footer">
+            <span>Be constructive and curious</span>
+            <button class="btn-primary" style="padding:8px 20px;font-size:.72rem" onclick="addComment('res')">Post</button>
+          </div>
+        </div>
+        <div id="res-comments"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SOUND VISUALIZER
+════════════════════════════════════ -->
+<div id="viz" style="position:fixed;bottom:68px;right:24px;display:flex;align-items:flex-end;gap:2px;height:18px;z-index:900;opacity:0;transition:opacity .5s">
+  <div class="vb" style="width:3px;background:var(--gold);border-radius:2px;--s:.4s;--h:8px;animation:vba .4s ease-in-out infinite alternate"></div>
+  <div class="vb" style="width:3px;background:var(--gold);border-radius:2px;--s:.6s;--h:14px;animation:vba .6s ease-in-out infinite alternate"></div>
+  <div class="vb" style="width:3px;background:var(--gold);border-radius:2px;--s:.5s;--h:18px;animation:vba .5s ease-in-out infinite alternate"></div>
+  <div class="vb" style="width:3px;background:var(--gold);border-radius:2px;--s:.7s;--h:12px;animation:vba .7s ease-in-out infinite alternate"></div>
+  <div class="vb" style="width:3px;background:var(--gold);border-radius:2px;--s:.45s;--h:20px;animation:vba .45s ease-in-out infinite alternate"></div>
+</div>
+<style>@keyframes vba{from{height:2px;}to{height:var(--h);}}</style>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   MOCK DATA — History Topics
+═══════════════════════════════════════════════════ */
+const HISTORY_DATA = [
+  {
+    id:'indus', era:'ancient', region:'india',
+    title:'Indus Valley Civilization',
+    desc:'One of the earliest urban civilizations — 5,000 years of advanced city planning, trade, and mystery.',
+    emoji:'🏺', tags:['India','Bronze Age','Urban'],
+    bgFrom:'#1a0d00', bgTo:'#0a0600',
+    color:'#c9a84c',
+    sections:[
+      {
+        year:'3300 BCE', chapter:'Chapter 01', title:'Dawn of the Cities',
+        text:'Around 3300 BCE, along the floodplains of the Indus and Ghaggar-Hakra rivers, something extraordinary began. People started building cities — not mere villages, but sophisticated urban centres with grid-planned streets, two-storey buildings, and elaborate drainage systems unmatched anywhere on Earth at the time.',
+        simple:'About 5,000 years ago, people in India built amazing cities! They had straight roads, houses with bathrooms, and even underground drains — better than many cities today.',
+        facts:[{n:'5 million',l:'Population at peak'},{n:'1,000+',l:'Cities & villages'},{n:'1,500km',l:'Area covered'}],
+        quote:'"The Indus civilization was more advanced than the civilizations of Mesopotamia and Egypt." — Sir John Marshall',
+        figure:{emoji:'🏛️',name:'Harappa & Mohenjo-daro',role:'Twin capital cities',bio:'These cities each held up to 50,000 people, featured public baths, granaries, and craftsmen quarters — a testament to remarkable civic planning.'},
+        bgFrom:'#1a1200', bgTo:'#080600', particles:'gold'
+      },
+      {
+        year:'2600 BCE', chapter:'Chapter 02', title:'Masterbuilders of the Bronze Age',
+        text:'At its height between 2600 and 1900 BCE, the Indus Valley Civilization covered an area larger than ancient Egypt and Mesopotamia combined. Their cities showed remarkable standardization — the same brick size was used from Harappa to sites 1,500 km away, suggesting a centralized authority or deep cultural unity.',
+        simple:'The Indus people were amazing builders! They used the exact same-sized bricks everywhere — even in cities thousands of kilometres apart. It\'s like everyone agreed on one building plan!',
+        facts:[{n:'2.3:1.1',l:'Standard brick ratio'},{n:'40,000',l:'People in Mohenjo-daro'},{n:'1900 BCE',l:'Peak civilization'}],
+        quote:'"The great bath of Mohenjo-daro is evidence of sophisticated religious and civic life."',
+        figure:{emoji:'🧱',name:'The Great Bath',role:'World\'s first public pool',bio:'Built around 2600 BCE, this 12m×7m waterproof structure was likely used for ritual purification. It remains one of the oldest public water tanks ever discovered.'},
+        bgFrom:'#1a0e00', bgTo:'#060400', particles:'amber'
+      },
+      {
+        year:'1900 BCE', chapter:'Chapter 03', title:'The Great Mystery — Decline',
+        text:'Around 1900 BCE, this extraordinary civilization began to collapse. Cities were abandoned, writing disappeared, and populations migrated eastward. Scholars debate the cause: climate change drying up rivers, flooding, disease, or a combination. The Indus script remains undeciphered to this day — 4,000 signs, no Rosetta Stone.',
+        simple:'Nobody knows exactly why these amazing cities were abandoned! Climate change, floods, or disease may have caused people to leave. Their writing is still a mystery — no one can read it yet!',
+        facts:[{n:'4,000+',l:'Undeciphered signs'},{n:'0',l:'Weapons of war found'},{n:'1921',l:'Year rediscovered'}],
+        quote:'"We can read the buildings but not the books. The Indus script remains the greatest linguistic mystery." — Modern archaeologist',
+        figure:{emoji:'🔍',name:'The Undeciphered Script',role:'World\'s greatest language mystery',bio:'Over 4,000 inscribed objects have been found — seals, tablets, signs — but the Indus script remains undeciphered. Until someone cracks it, a whole civilisation remains silent.'},
+        bgFrom:'#100a08', bgTo:'#040303', particles:'red'
+      }
+    ]
+  },
+  {
+    id:'egypt', era:'ancient', region:'egypt',
+    title:'Ancient Egypt',
+    desc:'Pharaohs, pyramids, and 3,000 years of the world\'s most iconic civilization on the banks of the Nile.',
+    emoji:'🏜️', tags:['Egypt','Pharaohs','Pyramids'],
+    bgFrom:'#1a1000', bgTo:'#090600', color:'#d4a030',
+    sections:[
+      {
+        year:'3100 BCE', chapter:'Chapter 01', title:'The Gift of the Nile',
+        text:'Egypt\'s story begins with the Nile — the world\'s longest river and one of history\'s greatest gifts to civilization. Every year, the Nile flooded and left behind rich, black silt that made the desert bloom. This predictable fertility allowed Egyptians to grow surplus food, support non-farming specialists, and build one of history\'s most enduring civilizations.',
+        simple:'Egypt was born because of the Nile River! Every year it flooded and left super-rich soil. Farmers could grow lots of food, so other people had time to be builders, artists, and priests.',
+        facts:[{n:'6,650 km',l:'Length of the Nile'},{n:'3,000',l:'Years of civilization'},{n:'2',l:'Kingdoms merged in 3100 BCE'}],
+        quote:'"Egypt is the gift of the Nile." — Herodotus, 450 BCE',
+        figure:{emoji:'👑',name:'Pharaoh Narmer',role:'Unifier of Egypt, ~3100 BCE',bio:'According to the famous Narmer Palette, this king united Upper and Lower Egypt into one kingdom — founding one of history\'s longest-lasting dynasties.'},
+        bgFrom:'#1a1000', bgTo:'#060400', particles:'gold'
+      },
+      {
+        year:'2560 BCE', chapter:'Chapter 02', title:'The Age of Pyramids',
+        text:'The Great Pyramid of Giza, built for Pharaoh Khufu around 2560 BCE, was the tallest man-made structure on Earth for 3,800 years. It contains 2.3 million stone blocks, some weighing 80 tonnes, moved without wheels, cranes, or iron tools. Recent evidence suggests the builders were not slaves, but skilled, well-fed workers who took pride in their craft.',
+        simple:'The pyramid builders were not slaves — they were proud workers who were well-fed and even had doctors! The Great Pyramid took 20 years to build using 2.3 million blocks of stone. That\'s incredible!',
+        facts:[{n:'2.3M',l:'Stone blocks used'},{n:'146m',l:'Original height'},{n:'3,800',l:'Years as tallest structure'}],
+        quote:'"When man fears time, time fears the pyramids." — Ancient Arab proverb',
+        figure:{emoji:'⚒️',name:'The Pyramid Workers',role:'Skilled craftsmen, not slaves',bio:'Graffiti found inside pyramids shows worker gangs proudly named themselves — "Friends of Khufu" and "Drunkards of Menkaure." They had beer rations, medical care, and a cemetery of honour.'},
+        bgFrom:'#1a1200', bgTo:'#070500', particles:'amber'
+      }
+    ]
+  },
+  {
+    id:'ww2', era:'modern', region:'world',
+    title:'World War II',
+    desc:'The deadliest conflict in human history — six years that reshaped every border, every government, and every life on Earth.',
+    emoji:'⚔️', tags:['War','Modern','World'],
+    bgFrom:'#0a0a0a', bgTo:'#040404', color:'#a04040',
+    sections:[
+      {
+        year:'1939', chapter:'Chapter 01', title:'The World Ignites',
+        text:'On September 1, 1939, Nazi Germany invaded Poland. Two days later, Britain and France declared war on Germany. Within months, a conflict that would consume six years and 70 million lives had begun. At its heart was a collision of ideologies — fascism, communism, democracy, and empire — playing out on every continent simultaneously.',
+        simple:'World War 2 started when Germany invaded Poland in 1939. It grew into the biggest war ever, involving almost every country on Earth. About 70 million people lost their lives — that\'s more than all of India\'s population today.',
+        facts:[{n:'70M',l:'Lives lost'},{n:'30+',l:'Nations involved'},{n:'6 years',l:'Duration'}],
+        quote:'"We shall fight on the beaches...we shall never surrender." — Winston Churchill, 1940',
+        figure:{emoji:'🎖️',name:'Winston Churchill',role:'British Prime Minister, 1940–45',bio:'Churchill\'s defiant leadership during Britain\'s darkest hours — including the Blitz — became a symbol of resistance against fascism. His speeches are considered among history\'s most powerful.'},
+        bgFrom:'#0a0808', bgTo:'#030202', particles:'red'
+      },
+      {
+        year:'1945', chapter:'Chapter 02', title:'The End & The New World',
+        text:'By May 1945, Germany surrendered. By September, Japan followed after two atomic bombs were dropped on Hiroshima and Nagasaki — the first and only wartime use of nuclear weapons. The post-war world saw the creation of the United Nations, the Cold War, decolonization across Asia and Africa, and the beginning of the modern international order.',
+        simple:'The war ended in 1945. The world changed completely — new countries were created, the United Nations was formed to prevent future wars, and the atomic age began. The world we live in today was shaped by these 6 years.',
+        facts:[{n:'6 Aug 1945',l:'Hiroshima bomb'},{n:'75M',l:'People displaced'},{n:'1945',l:'UN founded'}],
+        quote:'"The release of atomic energy has not created a new problem. It has merely made more urgent the need to solve an existing one." — Albert Einstein',
+        figure:{emoji:'🕊️',name:'The United Nations',role:'Founded October 24, 1945',bio:'Created from the ashes of war, the UN brought together 51 nations committed to preventing future conflicts. Today it has 193 member states and remains the world\'s primary international peacekeeping body.'},
+        bgFrom:'#080808', bgTo:'#020202', particles:'blue'
+      }
+    ]
+  },
+  {
+    id:'mughal', era:'medieval', region:'india',
+    title:'Mughal Empire',
+    desc:'At its height, the Mughal Empire ruled over 150 million people — a quarter of the world\'s population — producing art, architecture, and culture unmatched in history.',
+    emoji:'🕌', tags:['India','Empire','Medieval'],
+    bgFrom:'#0d0a1a', bgTo:'#050408', color:'#8070c0',
+    sections:[
+      {
+        year:'1526', chapter:'Chapter 01', title:'Babur and the Birth of an Empire',
+        text:'In 1526, Zahiruddin Muhammad Babur descended from the mountains of Kabul with a small but modernly equipped army. At the First Battle of Panipat, he defeated the numerically superior forces of Ibrahim Lodi using artillery — a weapon almost unknown in India at the time. From this single battle, an empire was born that would last over three centuries.',
+        simple:'Babur was a brilliant general who used cannons in India for the first time! With just 12,000 soldiers, he beat an army of over 100,000 people. That\'s how the Mughal Empire started!',
+        facts:[{n:'1526',l:'Founded at Panipat'},{n:'12,000',l:'Babur\'s army size'},{n:'100,000+',l:'Enemy army defeated'}],
+        quote:'"Happy the man who forgets the world\'s troubles in the intoxication of battle." — Babur, Baburnama',
+        figure:{emoji:'⚔️',name:'Zahiruddin Babur',role:'Founder of the Mughal Empire',bio:'A poet, warrior, and naturalist, Babur left behind the Baburnama — the world\'s first true autobiography. He mourned leaving his beloved gardens of Central Asia but built an empire in India instead.'},
+        bgFrom:'#0d0a18', bgTo:'#050408', particles:'purple'
+      },
+      {
+        year:'1630s', chapter:'Chapter 02', title:'Akbar — The Greatest Mughal',
+        text:'Akbar the Great (1556–1605) is widely considered the finest ruler the Mughal Empire produced. He abolished the discriminatory jizya tax on non-Muslims, established a policy of religious tolerance, created a new syncretic religion called Din-i-Ilahi, and presided over an empire of extraordinary cultural richness. His court included nine "gems" — brilliant scholars and artists.',
+        simple:'Akbar was one of India\'s greatest rulers! He believed that all religions deserve respect. He made friends with Hindu Rajputs, abolished unfair taxes, and created one of the most diverse courts in history.',
+        facts:[{n:'49 years',l:'Reign of Akbar'},{n:'9',l:'Navratnas (court gems)'},{n:'1582',l:'Din-i-Ilahi founded'}],
+        quote:'"A monarch should be ever intent on conquest, otherwise his neighbours rise in arms against him." — Akbar',
+        figure:{emoji:'🌟',name:'Akbar the Great',role:'Emperor, 1556–1605',bio:'Born during his father\'s exile, Akbar was illiterate yet one of history\'s most intellectually curious rulers. He conducted debates between scholars of all faiths and had books read to him daily.'},
+        bgFrom:'#0c0a16', bgTo:'#050408', particles:'purple'
+      }
+    ]
+  },
+  {
+    id:'rome', era:'ancient', region:'europe',
+    title:'Roman Empire',
+    desc:'From a village on the Tiber River to a civilization that governed 70 million people — Rome shaped law, language, and culture for 2,000 years.',
+    emoji:'🏛️', tags:['Europe','Empire','Ancient'],
+    bgFrom:'#0f0a06', bgTo:'#050302', color:'#c04830',
+    sections:[
+      {
+        year:'753 BCE', chapter:'Chapter 01', title:'From Village to Republic',
+        text:'According to Roman tradition, Rome was founded in 753 BCE by twin brothers Romulus and Remus, raised by a she-wolf. While the myth is poetic, archaeology confirms a genuine settlement on the Palatine Hill from around this date. What began as a collection of Latin villages would, through centuries of war, alliance, and genius governance, become the most powerful state the ancient world had ever seen.',
+        simple:'Rome started as a tiny village! The Romans tell a legend that twins raised by a wolf founded their city. Whether true or not, Rome grew from that small village into an empire that covered most of the known world.',
+        facts:[{n:'753 BCE',l:'Traditional founding'},{n:'70M',l:'Population at peak'},{n:'500 years',l:'The Republic lasted'}],
+        quote:'"All roads lead to Rome." — Medieval proverb reflecting Roman infrastructure',
+        figure:{emoji:'🐺',name:'Romulus & Remus',role:'Legendary founders of Rome',bio:'The myth of Rome\'s wolf-raised founders symbolizes the Roman self-image: fierce, blessed by the gods, destined for greatness. Romulus allegedly killed Remus in an argument — setting a tragic precedent for Roman civil wars.'},
+        bgFrom:'#0f0a06', bgTo:'#060302', particles:'red'
+      }
+    ]
+  },
+  {
+    id:'renaissance', era:'medieval', region:'europe',
+    title:'The Renaissance',
+    desc:'A rebirth of art, science, and human potential — when Europe rediscovered ancient knowledge and ignited the modern world.',
+    emoji:'🎨', tags:['Europe','Culture','Medieval'],
+    bgFrom:'#0a0f18', bgTo:'#030508', color:'#4080c0',
+    sections:[
+      {
+        year:'1400s', chapter:'Chapter 01', title:'The Rebirth of Human Potential',
+        text:'Renaissance means "rebirth" in French. Beginning in the city-states of Italy in the 14th century, this extraordinary movement saw scholars, artists, and thinkers rediscover the wisdom of ancient Greece and Rome, then build explosively upon it. Florence, under the patronage of the Medici banking family, became the epicentre of perhaps the greatest flowering of artistic and intellectual achievement in history.',
+        simple:'The Renaissance was when Europe "woke up" after the Dark Ages! Artists, scientists, and thinkers started asking big questions again. Leonardo da Vinci painted masterpieces AND designed flying machines. It was an incredible time!',
+        facts:[{n:'1400s',l:'Began in Italy'},{n:'100+',l:'Years of flowering'},{n:'Florence',l:'Cultural heart'}],
+        quote:'"I have been impressed with the urgency of doing. Knowing is not enough; we must apply." — Leonardo da Vinci',
+        figure:{emoji:'🎭',name:'Leonardo da Vinci',role:'Painter, scientist, inventor — 1452–1519',bio:'Perhaps history\'s greatest genius, Leonardo filled 7,000+ pages of notebooks with anatomy drawings, flying machine designs, solar energy concepts, and artistic masterpieces. He was 500 years ahead of his time.'},
+        bgFrom:'#0a0f18', bgTo:'#030508', particles:'blue'
+      }
+    ]
+  }
+];
+
+/* ═══════════════════════════════════════════════════
+   MOCK DATA — Science Evolution
+═══════════════════════════════════════════════════ */
+const SCIENCE_DATA = [
+  { year:'~400,000 BCE', title:'Control of Fire', scientist:'Early Homo sapiens', emoji:'🔥',
+    desc:'The mastery of fire was humanity\'s first great technological revolution — enabling cooking, warmth, protection from predators, and eventually, metallurgy.',
+    simple:'Humans learned to make fire! This let them cook food (making it safer and more nutritious), stay warm, scare off animals, and eventually smelt metal.',
+    impact:'rev', impactLabel:'Revolutionary',
+    linkedHistory:'Changed all of human history — made us human',
+    cause:'Accidental discovery of sparks from flint', effect:'Led to cooking, metallurgy, ceramics' },
+  { year:'~3500 BCE', title:'The Wheel', scientist:'Mesopotamian inventors', emoji:'⚙️',
+    desc:'Invented in Mesopotamia (modern Iraq), the wheel transformed transportation, pottery, and mechanized agriculture — compressing distances and accelerating trade.',
+    simple:'The wheel seems obvious now, but inventing it was genius! Before wheels, everything heavy had to be carried or dragged. The wheel changed trade, farming, and how civilizations grew.',
+    impact:'rev', impactLabel:'Revolutionary',
+    cause:'Need to move heavy loads', effect:'Led to carts, gears, mills, and all of modern machinery' },
+  { year:'~300 BCE', title:'Heliocentric Model (Early)', scientist:'Aristarchus of Samos', emoji:'🌍',
+    desc:'Aristarchus proposed — 1,800 years before Copernicus — that the Earth orbits the Sun. He was ignored, ridiculed, and nearly charged with impiety.',
+    simple:'A Greek scientist figured out that Earth goes AROUND the Sun — 1,800 years before everyone else believed it! He was ignored and called crazy. That\'s how science sometimes works.',
+    impact:'high', impactLabel:'Revolutionary (ignored)',
+    cause:'Mathematical observation of lunar eclipses', effect:'Eventually inspired Copernicus in 1543' },
+  { year:'1543', title:'Heliocentric Model (Accepted)', scientist:'Nicolaus Copernicus', emoji:'☀️',
+    desc:'Copernicus published his heliocentric model just before his death. It contradicted Church doctrine and triggered the Scientific Revolution — fundamentally changing humanity\'s place in the cosmos.',
+    simple:'Copernicus proved that the Earth orbits the Sun. The Church was furious! But this discovery started the Scientific Revolution — when people started testing ideas with evidence instead of just believing authorities.',
+    impact:'rev', impactLabel:'Revolution in thinking',
+    cause:'Aristarchus\'s forgotten work + careful observation', effect:'Triggered Galileo, Kepler, Newton, Einstein' },
+  { year:'1665', title:'Theory of Gravity', scientist:'Isaac Newton', emoji:'🍎',
+    desc:'Newton\'s laws of motion and universal gravitation — reportedly inspired by watching an apple fall — unified terrestrial and celestial mechanics into a single mathematical framework.',
+    simple:'Newton watched an apple fall and thought: why does everything fall down? He worked out the maths and discovered gravity works the same way for apples AND the Moon. One law for the whole universe!',
+    impact:'rev', impactLabel:'Unified physics',
+    cause:'Copernicus + Kepler\'s orbital laws', effect:'Enabled space travel 300 years later' },
+  { year:'1859', title:'Theory of Evolution', scientist:'Charles Darwin', emoji:'🦎',
+    desc:'Darwin\'s "On the Origin of Species" proposed natural selection as the mechanism for evolution — arguably the most important idea in biology, explaining the diversity of all life on Earth.',
+    simple:'Darwin noticed that animals slowly change over many generations to survive better. This "survival of the fittest" explains why giraffes have long necks, why bacteria become drug-resistant — and why humans exist!',
+    impact:'rev', impactLabel:'Biological revolution',
+    cause:'5-year voyage on HMS Beagle observing species', effect:'Foundation of all modern biology and medicine' },
+  { year:'1905', title:'Theory of Special Relativity', scientist:'Albert Einstein', emoji:'⚡',
+    desc:'At 26, Einstein published four papers that shattered Newtonian physics — showing that time slows at high speeds, mass and energy are equivalent (E=mc²), and the speed of light is constant.',
+    simple:'Einstein discovered that time isn\'t fixed — it actually slows down the faster you move! And that a tiny bit of matter contains enormous energy (E=mc²). GPS in your phone only works because of Einstein!',
+    impact:'rev', impactLabel:'Reframed reality',
+    cause:'Maxwell\'s equations + Michelson-Morley experiment', effect:'Nuclear energy, GPS, lasers, all of modern physics' },
+  { year:'1953', title:'Structure of DNA', scientist:'Watson, Crick, Franklin & Wilkins', emoji:'🧬',
+    desc:'The discovery of DNA\'s double helix structure unlocked the code of life — explaining how genetic information is stored, copied, and transmitted. It began the age of molecular biology.',
+    simple:'Scientists discovered that DNA is shaped like a twisted ladder — and that\'s how all living things store their "instruction manual"! This led to medicine, gene therapy, forensics, and our ability to read our own genes.',
+    impact:'rev', impactLabel:'Code of life cracked',
+    cause:'X-ray crystallography by Rosalind Franklin', effect:'Genetic medicine, CRISPR, human genome project' },
+  { year:'2022', title:'Generative AI & Large Language Models', scientist:'Multiple teams worldwide', emoji:'🤖',
+    desc:'The emergence of large language models capable of generating human-quality text, images, and code represents a potential inflection point comparable in scope to the industrial revolution.',
+    simple:'AI can now write, draw, code, and reason! Just like the printing press spread knowledge to everyone, AI might change how humans work, learn, and create. We\'re living through history right now.',
+    impact:'high', impactLabel:'Ongoing revolution',
+    cause:'Transformer architecture (2017) + massive compute', effect:'Still unfolding — we are living through it' },
+];
+
+/* ═══════════════════════════════════════════════════
+   MOCK DATA — Researchers
+═══════════════════════════════════════════════════ */
+const RESEARCHERS = [
+  {
+    id:'mehta', emoji:'👩‍🔬', name:'Dr. Priya Mehta',
+    title:'Professor of Ancient Civilizations, IIT Delhi',
+    field:'Archaeology · Indus Valley',
+    country:'India 🇮🇳',
+    institution:'IIT Delhi',
+    papers:34, citations:1820, awards:['Padma Shri 2019','INSA Fellow','UNESCO Heritage Award'],
+    bio:'Dr. Mehta has dedicated 22 years to excavating and interpreting Indus Valley sites, with pioneering work on decoding patterns in Indus seals using computational linguistics.',
+    posts:[
+      {
+        id:'p1', tags:['Archaeology','Indus Valley','Script Analysis'],
+        title:'Computational Approaches to Indus Script Decipherment',
+        preview:'Using machine learning to identify statistical patterns in 4,200 Indus seal inscriptions...',
+        detailed:'This study applied natural language processing algorithms to the corpus of 4,200+ known Indus seal inscriptions. By analyzing character frequency, positional constraints, and bigram distributions, we identified 417 unique signs with statistically significant positional preferences — suggesting a structured, likely logo-syllabic writing system with morphological markers. Comparative analysis with Dravidian syntax patterns yielded a preliminary correlation of 0.64, offering the strongest computational evidence yet for a proto-Dravidian language substrate.',
+        simple:'We used computer programs similar to those that help phones understand your voice, but applied them to 4,000-year-old symbols! The computer found patterns that suggest the Indus people spoke an early version of South Indian languages like Tamil.',
+        findings:['417 unique signs identified with positional rules','Statistical correlation of 0.64 with Dravidian syntax','Evidence for suffix-based morphology in sign clusters','Merchant-class seals differ structurally from religious ones']
+      },
+      {
+        id:'p2', tags:['Urban Planning','Water Systems','Bronze Age'],
+        title:'Hydraulic Engineering in Mohenjo-daro: A Modern Assessment',
+        preview:'New ground-penetrating radar reveals a drainage network 40% more extensive than previously mapped...',
+        detailed:'Ground-penetrating radar surveys conducted in 2022–23 across the lower city of Mohenjo-daro revealed a subsurface drainage infrastructure 40% more extensive than previously documented. We identified tertiary channels, sediment traps, and what appear to be flow-regulation chambers — implying a level of hydraulic engineering not replicated in the ancient world until Roman aqueducts 2,000 years later. Isotopic analysis of pipe sealants confirms organic bitumen was used, consistent with a sophisticated understanding of waterproofing materials.',
+        simple:'We used special radar (like airport scanners but for underground) to map the sewers under the ancient city. We found they were even more amazing than we thought — better than anything built for another 2,000 years! The Indus people were incredible engineers.',
+        findings:['Drainage network 40% larger than mapped','Sediment traps indicate active maintenance','Bitumen waterproofing used systematically','City population estimate revised upward to 55,000']
+      }
+    ],
+    comments:[
+      {avatar:'👨‍🎓',name:'Rahul Sharma',time:'2 days ago',text:'Incredible work Dr. Mehta! Do you think the script decipherment will be solved in our lifetime?'},
+      {avatar:'👩‍💻',name:'Anika Patel',time:'1 week ago',text:'The hydraulic engineering paper changed how I teach ancient history. Thank you for making it accessible.'}
+    ]
+  },
+  {
+    id:'okafor', emoji:'👨‍🔭', name:'Prof. James Okafor',
+    title:'Chair, Department of Astrophysics, University of Lagos',
+    field:'Astrophysics · Cosmology',
+    country:'Nigeria 🇳🇬',
+    institution:'University of Lagos',
+    papers:61, citations:4200, awards:['Royal Astronomical Society Fellow','African Science Prize 2021','NASA Collaborative Award'],
+    bio:'Prof. Okafor\'s research focuses on the formation of supermassive black holes in the early universe, combining observational data from the James Webb Space Telescope with theoretical modeling.',
+    posts:[
+      {
+        id:'p3', tags:['Black Holes','JWST','Early Universe'],
+        title:'Supermassive Black Holes at z>10: JWST Observations Challenge Formation Models',
+        preview:'James Webb data reveals black holes 100× more massive than models predicted at cosmic dawn...',
+        detailed:'Analysis of 23 JWST targets at redshifts z>10 (corresponding to the universe\'s first 500 million years) reveals supermassive black holes with masses 10⁸–10⁹ solar masses — approximately 100 times more massive than standard hierarchical merger models predict at these epochs. This either requires seed black holes of unprecedented mass (>10⁵ solar masses) in the very early universe, or substantially accelerated accretion rates exceeding the Eddington limit by factors of 10–100. Neither mechanism has adequate theoretical grounding, suggesting fundamental revisions to our models of cosmic structure formation are required.',
+        simple:'We pointed the new James Webb Space Telescope at the very early universe and found HUGE black holes that shouldn\'t exist yet — like finding a fully grown adult in a nursery! This means our theories about how black holes form need to be completely rethought.',
+        findings:['23 JWST targets analyzed at z>10','Black holes 100× more massive than predicted','Standard formation models require revision','Possible new "heavy seed" formation pathway identified']
+      }
+    ],
+    comments:[
+      {avatar:'🔭',name:'Sofia Martins',time:'3 days ago',text:'This challenges everything! Do you think direct collapse black holes could explain the mass discrepancy?'},
+      {avatar:'👨‍🏫',name:'Dr. Wei Chen',time:'5 days ago',text:'Remarkable findings. Are you planning follow-up spectroscopy to confirm the mass estimates?'}
+    ]
+  },
+  {
+    id:'silva', emoji:'👩‍⚕️', name:'Dr. Marina Silva',
+    title:'Senior Researcher, Wellcome Trust Institute, London',
+    field:'Neuroscience · Memory',
+    country:'Brazil/UK 🇧🇷🇬🇧',
+    institution:'Wellcome Trust Institute',
+    papers:28, citations:2100, awards:['Nature Rising Star 2022','Burroughs Wellcome Fund Award','Brain Prize Shortlist 2023'],
+    bio:'Dr. Silva investigates the cellular mechanisms of memory consolidation during sleep, with implications for Alzheimer\'s disease treatment and cognitive enhancement.',
+    posts:[
+      {
+        id:'p4', tags:['Neuroscience','Sleep','Memory','Alzheimer\'s'],
+        title:'Slow-Wave Sleep Disruption Accelerates Amyloid Plaque Formation: A Longitudinal Study',
+        preview:'Seven years of data links poor deep sleep to 3× faster amyloid accumulation in the hippocampus...',
+        detailed:'A seven-year longitudinal cohort study (n=847, ages 45–75) demonstrates that chronic slow-wave sleep disruption — defined as <40 minutes of N3 sleep per night — correlates with amyloid-β accumulation rates 2.8× higher than in sleep-adequate controls (p<0.001). fMRI analysis reveals accelerated hippocampal volume reduction (mean 4.2% vs 1.1% over 7 years) and tau neurofibrillary tangle density increases in entorhinal cortex. These findings suggest a causative rather than merely correlative relationship between sleep disruption and Alzheimer\'s pathology, with profound implications for prevention strategies targeting sleep quality in midlife.',
+        simple:'We studied 847 people for 7 years and found that people who don\'t get enough DEEP sleep (the really restful kind) build up the harmful brain proteins linked to Alzheimer\'s disease THREE TIMES FASTER than good sleepers. Good sleep might be one of the best brain-protection habits you can have!',
+        findings:['847 participants followed for 7 years','2.8× faster amyloid accumulation in poor sleepers','Hippocampus shrinks 4× faster with sleep disruption','Midlife sleep improvement may be preventative']
+      }
+    ],
+    comments:[
+      {avatar:'👩‍⚕️',name:'Dr. Aisha Kamau',time:'1 day ago',text:'This is groundbreaking. Should we be recommending sleep studies for patients with family history of Alzheimer\'s?'},
+      {avatar:'🧠',name:'Thomas Berg',time:'4 days ago',text:'Finally a longitudinal study with sufficient power! The causal mechanism question is key though.'}
+    ]
+  }
+];
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL STATE
+═══════════════════════════════════════════════════ */
+let currentPage = 'home';
+let ageMode = 'student'; // 'student' (detailed) or 'simple'
+let soundOn = false;
+let audioCtx = null;
+let masterGain = null;
+let soundNodes = [];
+let currentResearcher = 0;
+
+/* ═══════════════════════════════════════════════════
+   CURSOR
+═══════════════════════════════════════════════════ */
+const cur = document.getElementById('cursor');
+const curRing = document.getElementById('cursor-ring');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px';
+  cur.style.top  = e.clientY + 'px';
+  curRing.style.left = e.clientX + 'px';
+  curRing.style.top  = e.clientY + 'px';
+});
+document.addEventListener('mousedown', () => { cur.style.transform = 'translate(-50%,-50%) scale(1.8)'; });
+document.addEventListener('mouseup',   () => { cur.style.transform = 'translate(-50%,-50%) scale(1)'; });
+
+/* ═══════════════════════════════════════════════════
+   STAR CANVAS
+═══════════════════════════════════════════════════ */
+const bgCanvas = document.getElementById('bg-canvas');
+const bgCtx    = bgCanvas.getContext('2d');
+let stars = [], meteors = [];
+
+function resizeBgCanvas() {
+  bgCanvas.width  = window.innerWidth;
+  bgCanvas.height = window.innerHeight;
+}
+resizeBgCanvas();
+window.addEventListener('resize', resizeBgCanvas);
+
+// Create 200 stars
+for (let i = 0; i < 200; i++) {
+  stars.push({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    r: Math.random() * 1.4 + 0.3,
+    a: Math.random(),
+    da: (Math.random() * 0.005 + 0.001) * (Math.random() < .5 ? 1 : -1)
+  });
+}
+
+function spawnMeteor() {
+  meteors.push({ x: Math.random() * window.innerWidth, y: -10, vx: 1.5 + Math.random() * 2, vy: 3 + Math.random() * 2, life: 1 });
+  setTimeout(spawnMeteor, 2500 + Math.random() * 4000);
+}
+spawnMeteor();
+
+function drawBgCanvas() {
+  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+  stars.forEach(s => {
+    s.a += s.da;
+    if (s.a > 1 || s.a < 0.05) s.da *= -1;
+    bgCtx.beginPath();
+    bgCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(255,255,255,${s.a * 0.6})`;
+    bgCtx.fill();
+  });
+  meteors.forEach((m, i) => {
+    m.x += m.vx; m.y += m.vy; m.life -= 0.01;
+    if (m.life <= 0 || m.y > window.innerHeight) { meteors.splice(i, 1); return; }
+    const g = bgCtx.createLinearGradient(m.x, m.y, m.x - m.vx * 12, m.y - m.vy * 12);
+    g.addColorStop(0, `rgba(255,240,180,${m.life})`);
+    g.addColorStop(1, 'rgba(255,240,180,0)');
+    bgCtx.beginPath();
+    bgCtx.strokeStyle = g;
+    bgCtx.lineWidth = 1.5;
+    bgCtx.moveTo(m.x, m.y);
+    bgCtx.lineTo(m.x - m.vx * 12, m.y - m.vy * 12);
+    bgCtx.stroke();
+  });
+  requestAnimationFrame(drawBgCanvas);
+}
+drawBgCanvas();
+
+/* ═══════════════════════════════════════════════════
+   PAGE ROUTING
+═══════════════════════════════════════════════════ */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+
+  const page = document.getElementById('page-' + name);
+  if (page) { page.classList.add('active'); window.scrollTo(0,0); }
+
+  const link = document.querySelector(`.nav-link[onclick*="'${name}'"]`);
+  if (link) link.classList.add('active');
+
+  currentPage = name;
+
+  // Init page-specific content
+  if (name === 'explore') buildHistoryGrid('all');
+  if (name === 'science') buildScienceTimeline();
+  if (name === 'research') buildResearchHub();
+
+  // Trigger reveal animations
+  setTimeout(triggerReveals, 100);
+}
+
+/* ═══════════════════════════════════════════════════
+   AGE MODE TOGGLE
+═══════════════════════════════════════════════════ */
+function setAge(mode) {
+  ageMode = mode;
+  document.querySelectorAll('.age-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.age-btn[onclick*="${mode}"]`).classList.add('active');
+
+  // Update all text in immersive view
+  document.querySelectorAll('.imm-text').forEach(el => el.classList.toggle('hide', mode === 'simple'));
+  document.querySelectorAll('.imm-text-simple').forEach(el => el.classList.toggle('show', mode === 'simple'));
+
+  // Update research post simplify toggles
+  document.querySelectorAll('.research-post').forEach(post => {
+    const detailed = post.querySelector('.rp-detailed');
+    const simple   = post.querySelector('.rp-simple');
+    const tog      = post.querySelector('.simplify-toggle');
+    if (!detailed || !simple) return;
+    if (mode === 'simple') {
+      detailed.classList.add('hidden');
+      simple.classList.remove('hidden');
+      if (tog) tog.classList.add('simple');
+    } else {
+      detailed.classList.remove('hidden');
+      simple.classList.add('hidden');
+      if (tog) tog.classList.remove('simple');
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   FILTER HISTORY GRID
+═══════════════════════════════════════════════════ */
+function filterHistory(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildHistoryGrid(filter);
+}
+
+function buildHistoryGrid(filter) {
+  const grid = document.getElementById('history-grid');
+  const filtered = filter === 'all'
+    ? HISTORY_DATA
+    : HISTORY_DATA.filter(d => d.era === filter || d.region === filter);
+
+  grid.innerHTML = filtered.map(item => `
+    <div class="history-card reveal" onclick="openImmersive('${item.id}')">
+      <div class="hcard-bg" style="background:radial-gradient(ellipse at 50% 30%,${item.bgFrom},${item.bgTo})">
+        <span class="hcard-emoji">${item.emoji}</span>
+        <div class="hcard-overlay"></div>
+      </div>
+      <div class="hcard-arrow">→</div>
+      <div class="hcard-body">
+        <div class="hcard-era">${item.era.toUpperCase()} · ${item.region.toUpperCase()}</div>
+        <div class="hcard-title">${item.title}</div>
+        <div class="hcard-desc">${item.desc}</div>
+        <div class="hcard-tags">${item.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+    </div>
+  `).join('');
+
+  setTimeout(triggerReveals, 50);
+}
+
+/* ═══════════════════════════════════════════════════
+   IMMERSIVE HISTORY VIEWER
+═══════════════════════════════════════════════════ */
+function openImmersive(id) {
+  const topic = HISTORY_DATA.find(d => d.id === id);
+  if (!topic) return;
+
+  const viewer = document.getElementById('immersive-view');
+  const bg     = document.getElementById('imm-bg');
+  const tl     = document.getElementById('imm-timeline');
+  const content= document.getElementById('imm-content');
+
+  viewer.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => { document.body.style.overflow = ''; viewer.scrollTop = 0; }, 10);
+
+  // Set background
+  bg.style.background = `radial-gradient(ellipse at 50% 30%, ${topic.bgFrom} 0%, ${topic.bgTo} 100%)`;
+
+  // Build timeline sidebar
+  tl.innerHTML = topic.sections.map((s, i) => `
+    <div class="itl-dot" data-idx="${i}" onclick="scrollImmersiveSection(${i})" title="${s.year}"></div>
+    ${i < topic.sections.length - 1 ? '<div class="itl-line"></div>' : ''}
+  `).join('');
+
+  // Build immersive sections
+  content.innerHTML = topic.sections.map((s, i) => `
+    <section class="imm-section" id="imm-sec-${i}">
+      <div class="imm-year">${s.year}</div>
+      <div class="imm-inner">
+        <p class="imm-chapter gold">${s.chapter}</p>
+        <h2 class="imm-title">${s.title}</h2>
+
+        <p class="imm-text ${ageMode === 'simple' ? 'hide' : 'show'}">${s.text}</p>
+        <p class="imm-text-simple ${ageMode === 'simple' ? 'show' : ''}">${s.simple}</p>
+
+        <div class="fact-row">
+          ${s.facts.map(f => `
+            <div class="fact-card">
+              <span class="fact-n">${f.n}</span>
+              <span class="fact-l">${f.l}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <blockquote>${s.quote}${s.quote.includes(' — ') ? '' : ''}</blockquote>
+
+        <div class="figure-card">
+          <div class="figure-avatar">${s.figure.emoji}</div>
+          <div>
+            <div class="figure-name">${s.figure.name}</div>
+            <div class="figure-role">${s.figure.role}</div>
+            <div class="figure-bio">${s.figure.bio}</div>
+          </div>
+        </div>
+
+        <p style="font-size:.7rem;opacity:.3;font-family:'JetBrains Mono',monospace;margin-top:1.5rem;letter-spacing:2px;text-transform:uppercase">
+          ${i < topic.sections.length - 1 ? '↓ scroll to continue' : '↓ scroll for discussion'}
+        </p>
+      </div>
+    </section>
+  `).join('');
+
+  // Pre-load some comments
+  const commentsDiv = document.getElementById('imm-comments');
+  commentsDiv.innerHTML = `
+    <div class="comment">
+      <div class="comment-avatar">🎓</div>
+      <div class="comment-body">
+        <div class="comment-meta"><span class="comment-name">Ananya Rao</span><span class="comment-time">3 hours ago</span></div>
+        <div class="comment-text">This is incredible — I never knew the drainage systems were so advanced. My history teacher never mentioned this!</div>
+        <div class="comment-actions"><button class="cmt-action">👍 12</button><button class="cmt-action">Reply</button></div>
+      </div>
+    </div>
+    <div class="comment">
+      <div class="comment-avatar">🔭</div>
+      <div class="comment-body">
+        <div class="comment-meta"><span class="comment-name">Prof. Kumar</span><span class="comment-time">1 day ago</span></div>
+        <div class="comment-text">The undeciphered script is the great tantalizing mystery. Computational methods are showing real promise — see Dr. Mehta's work in the Research Hub.</div>
+        <div class="comment-actions"><button class="cmt-action">👍 28</button><button class="cmt-action">Reply</button></div>
+      </div>
+    </div>
+  `;
+
+  // Scroll-driven timeline highlight
+  viewer.onscroll = () => updateImmersiveTimeline(topic.sections.length);
+
+  // GSAP entrance animation
+  if (typeof gsap !== 'undefined') {
+    gsap.fromTo('#imm-content .imm-section:first-child .imm-inner',
+      { opacity: 0, y: 60 },
+      { opacity: 1, y: 0, duration: 1, ease: 'power3.out', delay: 0.2 }
+    );
+  }
+
+  if (soundOn) playSectionSound(topic.id);
+}
+
+function closeImmersive() {
+  document.getElementById('immersive-view').classList.remove('active');
+  stopSoundNodes();
+  if (soundOn) playAmbientBase();
+}
+
+function updateImmersiveTimeline(count) {
+  const viewer = document.getElementById('immersive-view');
+  const prog   = viewer.scrollTop / (viewer.scrollHeight - viewer.innerHeight || 1);
+  document.getElementById('imm-progress-bar').style.width = (prog * 100) + '%';
+
+  // Active dot
+  for (let i = 0; i < count; i++) {
+    const sec = document.getElementById('imm-sec-' + i);
+    if (!sec) continue;
+    const dot = document.querySelector(`.itl-dot[data-idx="${i}"]`);
+    const line = dot && dot.nextElementSibling;
+    const inView = viewer.scrollTop >= sec.offsetTop - 200;
+    if (dot) dot.classList.toggle('active', inView && (i === count - 1 || viewer.scrollTop < (document.getElementById('imm-sec-' + (i + 1))?.offsetTop - 200)));
+    if (line) line.classList.toggle('lit', inView);
+  }
+}
+
+function scrollImmersiveSection(idx) {
+  const sec = document.getElementById('imm-sec-' + idx);
+  if (sec) document.getElementById('immersive-view').scrollTo({ top: sec.offsetTop, behavior: 'smooth' });
+}
+
+/* ═══════════════════════════════════════════════════
+   SCIENCE TIMELINE
+═══════════════════════════════════════════════════ */
+function buildScienceTimeline() {
+  const tl = document.getElementById('sci-timeline');
+  tl.innerHTML = SCIENCE_DATA.map((s, i) => `
+    <div class="sci-entry">
+      <div class="sci-dot-wrap" style="margin-top:1.4rem"><div class="sci-dot" title="${s.year}"></div></div>
+      <div style="flex:1;${i % 2 === 0 ? '' : 'visibility:hidden'}"></div>
+      <div class="sci-card">
+        <span class="sci-year-tag">◆ ${s.year}</span>
+        <div class="sci-title">${s.emoji} ${s.title}</div>
+        <div class="sci-desc ${ageMode === 'simple' ? 'hidden' : ''}" data-type="detailed">${s.desc}</div>
+        <div class="sci-desc ${ageMode !== 'simple' ? 'hidden' : ''}" data-type="simple" style="background:rgba(64,160,96,.06);padding:.8rem;border-radius:6px;border-left:3px solid rgba(64,160,96,.3);font-style:italic">${s.simple}</div>
+        <div class="sci-scientist">
+          <span class="sci-avatar">🧑‍🔬</span>
+          <span class="sci-sname">${s.scientist}</span>
+        </div>
+        <span class="sci-impact impact-${s.impact}">${s.impactLabel}</span>
+        <div style="margin-top:.8rem;font-size:.75rem;opacity:.45;border-top:1px solid rgba(255,255,255,.06);padding-top:.6rem">
+          <span style="color:rgba(64,128,192,.8)">Cause:</span> ${s.cause}<br/>
+          <span style="color:rgba(64,160,96,.8)">Effect:</span> ${s.effect}
+        </div>
+      </div>
+      <div style="flex:1;${i % 2 !== 0 ? '' : 'visibility:hidden'}"></div>
+    </div>
+  `).join('');
+
+  setTimeout(triggerReveals, 100);
+}
+
+/* ═══════════════════════════════════════════════════
+   RESEARCH HUB
+═══════════════════════════════════════════════════ */
+function buildResearchHub() {
+  // Sidebar
+  const list = document.getElementById('researcher-list');
+  list.innerHTML = RESEARCHERS.map((r, i) => `
+    <div class="researcher-card ${i === currentResearcher ? 'active' : ''}" onclick="selectResearcher(${i})">
+      <div class="rc-avatar">${r.emoji}</div>
+      <div>
+        <div class="rc-name">${r.name}</div>
+        <div class="rc-field">${r.field}</div>
+      </div>
+    </div>
+  `).join('');
+
+  loadResearcher(currentResearcher);
+}
+
+function selectResearcher(idx) {
+  currentResearcher = idx;
+  document.querySelectorAll('.researcher-card').forEach((c,i) => c.classList.toggle('active', i === idx));
+  loadResearcher(idx);
+}
+
+function loadResearcher(idx) {
+  const r = RESEARCHERS[idx];
+  const profileArea = document.getElementById('profile-area');
+  const postsArea   = document.getElementById('posts-area');
+
+  // Profile panel
+  profileArea.innerHTML = `
+    <div class="profile-panel active">
+      <div class="pp-header">
+        <div class="pp-avatar">${r.emoji}</div>
+        <div>
+          <div class="pp-name">${r.name}</div>
+          <div class="pp-title">${r.title}</div>
+          <div class="pp-meta">
+            <span class="pp-badge">${r.country}</span>
+            <span class="pp-badge">${r.institution}</span>
+            <span class="pp-badge">${r.field}</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:.9rem;opacity:.65;margin-bottom:1.2rem;line-height:1.7;font-style:italic">${r.bio}</p>
+      <div class="pp-stats">
+        <div class="pp-stat"><span class="pp-stat-n">${r.papers}</span><span class="pp-stat-l">Papers</span></div>
+        <div class="pp-stat"><span class="pp-stat-n">${r.citations.toLocaleString()}</span><span class="pp-stat-l">Citations</span></div>
+        <div class="pp-stat"><span class="pp-stat-n">${r.awards.length}</span><span class="pp-stat-l">Awards</span></div>
+      </div>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--gold);letter-spacing:2px;margin-bottom:.6rem;opacity:.7">🏆 AWARDS & RECOGNITION</p>
+      <div class="award-row">
+        ${r.awards.map(a => `<span class="award-pill"><span>🏅</span>${a}</span>`).join('')}
+      </div>
+    </div>
+  `;
+
+  // Research posts
+  postsArea.innerHTML = `
+    <p style="font-family:'Cinzel',serif;font-size:.85rem;color:var(--gold);letter-spacing:2px;margin-bottom:1rem;opacity:.8">📄 RESEARCH CONTRIBUTIONS</p>
+    ${r.posts.map(p => `
+      <div class="research-post" id="post-${p.id}">
+        <div class="rp-header" onclick="togglePost('${p.id}')">
+          <div class="rp-meta">
+            <div class="rp-tags">${p.tags.map(t => `<span class="rp-tag">${t}</span>`).join('')}</div>
+            <div class="rp-title">${p.title}</div>
+            <div class="rp-preview">${p.preview}</div>
+          </div>
+          <div class="rp-toggle-icon">+</div>
+        </div>
+        <div class="rp-body">
+          <button class="simplify-toggle ${ageMode === 'simple' ? 'simple' : ''}" onclick="toggleSimplify(this, '${p.id}')">
+            <div class="tog-dot"></div>
+            <span>${ageMode === 'simple' ? 'Reading: Simple Mode' : 'Toggle Simple Mode'}</span>
+          </button>
+
+          <div class="rp-detailed ${ageMode === 'simple' ? 'hidden' : ''}">
+            <p class="rp-text">${p.detailed}</p>
+          </div>
+          <div class="rp-simple ${ageMode !== 'simple' ? 'hidden' : ''}">
+            <p class="rp-text-simple">🧒 <strong>In Simple Words:</strong><br/><br/>${p.simple}</p>
+          </div>
+
+          <div class="rp-findings">
+            <div class="rp-find-title">Key Findings</div>
+            ${p.findings.map(f => `<div class="rp-find-item">${f}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+
+  // Load comments for this researcher
+  const commentsDiv = document.getElementById('res-comments');
+  commentsDiv.innerHTML = r.comments.map(c => `
+    <div class="comment">
+      <div class="comment-avatar">${c.avatar}</div>
+      <div class="comment-body">
+        <div class="comment-meta">
+          <span class="comment-name">${c.name}</span>
+          <span class="comment-time">${c.time}</span>
+        </div>
+        <div class="comment-text">${c.text}</div>
+        <div class="comment-actions">
+          <button class="cmt-action">👍 Like</button>
+          <button class="cmt-action">Reply</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function togglePost(id) {
+  const post = document.getElementById('post-' + id);
+  post.classList.toggle('expanded');
+}
+
+function toggleSimplify(btn, postId) {
+  btn.classList.toggle('simple');
+  const post     = document.getElementById('post-' + postId);
+  const detailed = post.querySelector('.rp-detailed');
+  const simple   = post.querySelector('.rp-simple');
+  const isSimple = btn.classList.contains('simple');
+  detailed.classList.toggle('hidden', isSimple);
+  simple.classList.toggle('hidden', !isSimple);
+  btn.querySelector('span').textContent = isSimple ? 'Reading: Simple Mode' : 'Toggle Simple Mode';
+}
+
+/* ═══════════════════════════════════════════════════
+   COMMENTS
+═══════════════════════════════════════════════════ */
+function addComment(prefix) {
+  const input = document.getElementById(prefix + '-comment-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  const container = document.getElementById(prefix + '-comments');
+  const avatars = ['🎓','📚','🔭','🧪','💡','🌍'];
+  const names   = ['Curious Learner','History Buff','Science Nerd','Research Fan','Time Traveler'];
+  const newComment = document.createElement('div');
+  newComment.className = 'comment';
+  newComment.style.animation = 'fadeUp .4s var(--ease) both';
+  newComment.innerHTML = `
+    <div class="comment-avatar">${avatars[Math.floor(Math.random()*avatars.length)]}</div>
+    <div class="comment-body">
+      <div class="comment-meta">
+        <span class="comment-name">${names[Math.floor(Math.random()*names.length)]}</span>
+        <span class="comment-time">Just now</span>
+      </div>
+      <div class="comment-text">${text}</div>
+      <div class="comment-actions">
+        <button class="cmt-action">👍 0</button>
+        <button class="cmt-action">Reply</button>
+      </div>
+    </div>
+  `;
+  container.prepend(newComment);
+  input.value = '';
+}
+
+/* ═══════════════════════════════════════════════════
+   SCROLL REVEAL (IntersectionObserver)
+═══════════════════════════════════════════════════ */
+function triggerReveals() {
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        // Science entries
+        if (e.target.classList.contains('sci-entry')) e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal:not(.visible), .sci-entry:not(.visible)').forEach(el => observer.observe(el));
+}
+
+// Scroll-based progress on main pages
+window.addEventListener('scroll', () => {
+  const st = window.scrollY;
+  const dh = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById('progress-bar').style.width = (st / dh * 100) + '%';
+  triggerReveals();
+});
+
+/* ═══════════════════════════════════════════════════
+   WEB AUDIO — AMBIENT SOUNDS
+═══════════════════════════════════════════════════ */
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.15;
+  masterGain.connect(audioCtx.destination);
+}
+
+function stopSoundNodes() {
+  soundNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  soundNodes = [];
+}
+
+function makePinkNoise(gain) {
+  const bufSize = audioCtx.sampleRate * 2;
+  const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+  for (let i=0; i<bufSize; i++) {
+    const w = Math.random()*2-1;
+    b0=.99886*b0+w*.0555179; b1=.99332*b1+w*.0750759;
+    b2=.96900*b2+w*.1538520; b3=.86650*b3+w*.3104856;
+    b4=.55000*b4+w*.5329522; b5=-.7616*b5-w*.0168980;
+    d[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.11; b6=w*.115926;
+  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf; src.loop = true;
+  const g = audioCtx.createGain(); g.gain.value = gain;
+  src.connect(g); g.connect(masterGain); src.start();
+  soundNodes.push(src);
+}
+
+function makeOsc(freq, type, gain, delay=0) {
+  const osc = audioCtx.createOscillator();
+  const g   = audioCtx.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  g.gain.value = gain;
+  osc.connect(g); g.connect(masterGain);
+  osc.start(audioCtx.currentTime + delay);
+  soundNodes.push(osc);
+}
+
+function playAmbientBase() {
+  // Gentle ambient hum — home/explore
+  makePinkNoise(0.04);
+  makeOsc(60, 'sine', 0.02);
+  makeOsc(120, 'sine', 0.01, 0.5);
+}
+
+function playSectionSound(id) {
+  stopSoundNodes();
+  if (id === 'indus' || id === 'egypt') {
+    // Desert wind + ancient drums feel
+    makePinkNoise(0.06);
+    makeOsc(80, 'sine', 0.03);
+    function drumBeat() {
+      if (!soundOn) return;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type='sine'; o.frequency.value=55;
+      g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.3);
+      o.connect(g); g.connect(masterGain); o.start(); o.stop(audioCtx.currentTime+0.3);
+      setTimeout(drumBeat, 1200 + Math.random()*600);
+    }
+    setTimeout(drumBeat, 400);
+  } else if (id === 'ww2') {
+    // Tense low drone
+    makePinkNoise(0.05);
+    makeOsc(40, 'sawtooth', 0.03);
+    makeOsc(80, 'sawtooth', 0.015);
+  } else if (id === 'mughal' || id === 'rome') {
+    // Majestic low tones
+    makePinkNoise(0.03);
+    makeOsc(110, 'sine', 0.04);
+    makeOsc(165, 'sine', 0.02, 1);
+    makeOsc(220, 'sine', 0.01, 2);
+  } else if (id === 'renaissance') {
+    // Lute-like gentle tones
+    makePinkNoise(0.02);
+    [261.63, 329.63, 392, 523.25].forEach((f, i) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type='triangle'; o.frequency.value=f; g.gain.value=0.015;
+      o.connect(g); g.connect(masterGain); o.start();
+      soundNodes.push(o);
+    });
+  } else {
+    playAmbientBase();
+  }
+}
+
+function toggleSound() {
+  initAudio();
+  soundOn = !soundOn;
+  const btn = document.getElementById('sound-btn');
+  const viz = document.getElementById('viz');
+  if (soundOn) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    playAmbientBase();
+    btn.textContent = '🔊';
+    viz.style.opacity = '1';
+  } else {
+    stopSoundNodes();
+    btn.textContent = '🔇';
+    viz.style.opacity = '0';
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   GSAP SCROLL ANIMATIONS (if available)
+═══════════════════════════════════════════════════ */
+if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Animate hero stats counting up
+  gsap.utils.toArray('.hstat-n').forEach(el => {
+    ScrollTrigger.create({
+      trigger: el,
+      onEnter: () => {
+        const final = el.textContent;
+        if (final.includes('+') || final.includes(',')) return;
+        gsap.fromTo(el, { opacity:0 }, { opacity:1, duration:1 });
+      }
+    });
+  });
+
+  // Parallax on orbs
+  gsap.utils.toArray('.hero-orb').forEach((orb, i) => {
+    gsap.to(orb, {
+      y: (i+1) * 80,
+      ease: 'none',
+      scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+// Initial reveal + cursor hover effects
+setTimeout(() => {
+  triggerReveals();
+  document.querySelectorAll('a, button, .history-card, .feat-card, .researcher-card').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      curRing.style.width = '50px'; curRing.style.height = '50px';
+      curRing.style.borderColor = 'rgba(201,168,76,.8)';
+    });
+    el.addEventListener('mouseleave', () => {
+      curRing.style.width = '30px'; curRing.style.height = '30px';
+      curRing.style.borderColor = 'rgba(201,168,76,.5)';
+    });
+  });
+}, 300);
+
+console.log('%cChronoLearn loaded ✦ Travel Through Time', 'color:#c9a84c;font-size:16px;font-family:serif;');
+</script>
+</body>
+</html>
