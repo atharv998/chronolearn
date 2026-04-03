@@ -8,9 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 <style>
-/* ═══════════════════════════════════════════════════
-   1. CSS VARIABLES & RESET
-═══════════════════════════════════════════════════ */
+
 :root {
   --gold:       #c9a84c;
   --gold-light: #f0d060;
@@ -43,9 +41,6 @@ a { text-decoration:none; color:inherit; }
 button { cursor:pointer; font-family:inherit; }
 img { max-width:100%; }
 
-/* ═══════════════════════════════════════════════════
-   2. CUSTOM CURSOR
-═══════════════════════════════════════════════════ */
 #cursor {
   position:fixed; width:10px; height:10px;
   border-radius:50%; background:var(--gold);
@@ -81,9 +76,7 @@ body:hover #cursor { opacity:1; }
   transition:width .08s;
 }
 
-/* ═══════════════════════════════════════════════════
-   5. NAVIGATION
-═══════════════════════════════════════════════════ */
+
 #nav {
   position:fixed; top:0; left:0; right:0;
   z-index:1000; height:64px;
@@ -139,23 +132,15 @@ body:hover #cursor { opacity:1; }
 }
 #sound-btn:hover { border-color:var(--gold); color:var(--gold); }
 
-/* ═══════════════════════════════════════════════════
-   6. BG CANVAS (Stars / particles)
-═══════════════════════════════════════════════════ */
+
 #bg-canvas {
   position:fixed; inset:0;
   pointer-events:none; z-index:0; opacity:.6;
 }
-
-/* ═══════════════════════════════════════════════════
-   7. PAGE SECTIONS (router)
-═══════════════════════════════════════════════════ */
 .page { display:none; min-height:100vh; position:relative; z-index:2; }
 .page.active { display:block; }
 
-/* ═══════════════════════════════════════════════════
-   8. HOME PAGE
-═══════════════════════════════════════════════════ */
+
 #page-home {
   background:radial-gradient(ellipse at 50% 35%, #1a1200 0%, #040300 80%);
 }
